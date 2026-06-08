@@ -1,1164 +1,817 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>Générateur — Rapport hebdomadaire Snacks O'Fun Park</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<style>
-:root {
-  /* === Couleurs de marque === */
-  --brand-red:        #7b170f;
-  --brand-red-light:  #cca09c;
-  --brand-gold:       #c98a40;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Extraction du chiffre d'affaires</title>
 
-  /* === Couleurs des 4 points de vente === */
-  --pdv-explorer:     #7b170f;
-  --pdv-rush:         #c98a40;
-  --pdv-bar:          #1d9e75;
-  --pdv-silver:       #4a6d8c;
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  /* === Couleurs sémantiques === */
-  --green-bg:  #eaf3de;
-  --green-fg:  #3b6d11;
-  --green-bar: #639922;
-  --red-bg:    #fcebeb;
-  --red-fg:    #791f1f;
-  --red-bar:   #e24b4a;
-  --amber-bg:  #faeeda;
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* === Neutres === */
-  --text-primary:   #1a1a1a;
-  --text-secondary: #5f5e5a;
-  --text-tertiary:  #888780;
-  --bg-page:        #f5f4ef;
-  --bg-card:        #ffffff;
-  --bg-soft:        #f0eee6;
-  --border:         #d3d1c7;
-  --border-light:   #e6e4dd;
-}
+    :root {
+      --bg: #faf9f6;
+      --ink: #18181b;
+      --line: #e7e5e4;
+      --line-soft: #f5f5f4;
+      --muted: #57534e;
+      --muted-soft: #a8a29e;
+      --muted-softer: #d6d3d1;
+      --accent: #3f6212;
+      --accent-soft: #f7faf3;
+      --error: #dc2626;
+      --error-bg: #fef2f2;
+      --error-text: #7f1d1d;
 
-* { box-sizing: border-box; }
-html, body {
-  margin: 0; padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  color: var(--text-primary);
-  background: var(--bg-page);
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-}
+      --font-display: 'Instrument Serif', Georgia, serif;
+      --font-body:    'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono:    'Geist Mono', ui-monospace, monospace;
+    }
 
-/* ============================================ */
-/*  UI Shell (cachée à l'impression)           */
-/* ============================================ */
-.ui-shell {
-  max-width: 720px;
-  margin: 1.5rem auto;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 12px;
-  border: 0.5px solid var(--border);
-}
-.ui-shell-header {
-  display: flex; align-items: center; gap: 1rem;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
-  border-bottom: 0.5px solid var(--border-light);
-}
-.ui-logo {
-  background: var(--brand-red);
-  padding: 14px 18px;
-  border-radius: 4px;
-  height: 64px; min-width: 95px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.ui-logo svg { height: 36px; width: auto; display: block; }
-.ui-shell-title {
-  font-size: 18px; font-weight: 500;
-}
-.ui-shell-subtitle {
-  font-size: 12px; color: var(--text-secondary);
-  margin-top: 2px;
-}
+    html, body {
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
 
-.file-drop {
-  border: 2px dashed var(--border);
-  border-radius: 8px;
-  padding: 1.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.file-drop:hover, .file-drop.dragover {
-  border-color: var(--brand-red);
-  background: var(--bg-soft);
-}
-.file-drop-text {
-  font-size: 13px; color: var(--text-secondary);
-}
-.file-drop-text strong { color: var(--brand-red); }
-.file-drop-name {
-  font-size: 12px; color: var(--text-primary);
-  margin-top: 6px;
-  font-weight: 500;
-}
+    button {
+      font-family: inherit;
+      font-size: inherit;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: inherit;
+    }
 
-.ui-controls {
-  display: flex; gap: 0.75rem; align-items: center;
-  margin-top: 1rem;
-  flex-wrap: wrap;
-}
-.ui-controls label {
-  font-size: 12px; color: var(--text-secondary);
-}
-.ui-controls select {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 0.5px solid var(--border);
-  background: white;
-  font-size: 13px;
-  cursor: pointer;
-  font-family: inherit;
-}
-.ui-controls select:disabled {
-  opacity: 0.5; cursor: not-allowed;
-}
+    main {
+      max-width: 44rem;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+    @media (min-width: 768px) { main { padding: 4rem 1.5rem; } }
 
-button.primary, button.secondary {
-  padding: 10px 18px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 13px;
-  font-family: inherit;
-}
-button.primary {
-  background: var(--brand-red); color: white; border: none;
-}
-button.primary:hover:not(:disabled) { background: #5e110b; }
-button.primary:disabled { background: #b4b2a9; cursor: not-allowed; }
-button.secondary {
-  background: white;
-  color: var(--text-primary);
-  border: 0.5px solid var(--border);
-}
-button.secondary:hover { background: var(--bg-soft); }
+    .inline-mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
 
-.log-zone {
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  background: var(--bg-page);
-  border-radius: 6px;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 12px;
-  color: var(--text-secondary);
-  white-space: pre-wrap;
-}
-.log-zone.empty { display: none; }
-.log-zone.error { background: var(--red-bg); color: var(--red-fg); }
-.log-zone.success { background: var(--green-bg); color: var(--green-fg); }
+    /* HEADER */
+    .header { margin-bottom: 3rem; }
+    .header-kicker {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .header h1 {
+      font-family: var(--font-display);
+      font-size: 3rem;
+      line-height: 1;
+      font-weight: 400;
+    }
+    @media (min-width: 768px) { .header h1 { font-size: 3.75rem; } }
+    .header h1 em { font-style: italic; }
+    .header p {
+      margin-top: 1rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+      max-width: 30rem;
+      line-height: 1.5;
+    }
+    .header p .inline-mono { color: var(--ink); }
 
-/* Toolbar flottante d'impression */
-.report-toolbar {
-  position: fixed;
-  bottom: 20px; right: 20px;
-  display: flex; gap: 0.5rem;
-  z-index: 100;
-}
+    /* UPLOAD */
+    .upload-zone {
+      border: 1px dashed var(--muted-softer);
+      padding: 2.5rem;
+      cursor: pointer;
+      transition: border-color 0.2s, background-color 0.2s, padding 0.2s;
+    }
+    .upload-zone.has-files {
+      border-color: var(--accent);
+      background-color: var(--accent-soft);
+      padding: 1.5rem 2rem;
+    }
+    .upload-zone.dragging {
+      border-color: var(--ink);
+      background-color: var(--line-soft);
+    }
 
-/* ============================================ */
-/*  Feuille A4                                  */
-/* ============================================ */
-@page { size: A4 portrait; margin: 12mm 14mm; }
+    .upload-empty { display: flex; align-items: center; gap: 1rem; }
+    .upload-empty svg { color: var(--muted-soft); }
+    .upload-empty-title { font-size: 0.875rem; font-weight: 500; }
+    .upload-empty-sub   { font-size: 0.75rem; color: var(--muted); margin-top: 0.125rem; }
 
-@media screen {
-  .page-sheet {
-    width: 210mm;
-    min-height: 297mm;
-    background: white;
-    padding: 12mm 14mm;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-    margin: 1rem auto;
-    display: flex; flex-direction: column;
-  }
-}
+    .file-list-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.375rem 0;
+    }
+    .file-row .file-icon { color: var(--muted); flex-shrink: 0; display: inline-flex; }
+    .file-row .file-name {
+      font-size: 0.875rem;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-row .file-size {
+      font-size: 0.75rem;
+      color: var(--muted-soft);
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+    .file-row button.remove {
+      color: var(--muted-soft);
+      transition: color 0.15s;
+      display: inline-flex;
+      padding: 0.25rem;
+    }
+    .file-row button.remove:hover { color: var(--ink); }
 
-@media print {
-  html, body { background: white !important; padding: 0; margin: 0; }
-  .ui-shell, .report-toolbar { display: none !important; }
-  .page-sheet {
-    width: auto !important;
-    min-height: auto !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-shadow: none !important;
-    page-break-after: always;
-    display: flex; flex-direction: column;
-  }
-  .page-sheet:last-child { page-break-after: auto; }
-}
+    .upload-hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--line);
+    }
 
-.report-container { display: none; }
-.report-container.ready { display: block; }
-.page-content { flex: 1; }
+    /* ACTIONS */
+    .actions { margin-top: 1rem; display: flex; gap: 0.75rem; }
+    .btn-primary {
+      flex: 1;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.75rem 1.25rem;
+      background-color: var(--ink);
+      color: var(--bg);
+      transition: background-color 0.2s;
+    }
+    .btn-primary:hover:not(:disabled) { background-color: #000; }
+    .btn-primary:disabled {
+      background-color: var(--line);
+      color: var(--muted-soft);
+      cursor: not-allowed;
+    }
+    .btn-secondary {
+      font-size: 0.875rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--muted-softer);
+      color: var(--muted);
+      transition: background-color 0.15s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .btn-secondary:hover { background-color: var(--line-soft); }
 
-/* === Header de page === */
-.r-header {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-  padding-bottom: 0.85rem;
-  border-bottom: 2px solid var(--brand-red);
-}
-.r-header-left { display: flex; align-items: center; gap: 1rem; }
-.r-logo {
-  background: var(--brand-red);
-  padding: 12px 16px;
-  border-radius: 4px;
-  height: 56px; min-width: 85px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.r-logo svg { height: 32px; width: auto; display: block; }
-.r-overtitle {
-  font-size: 10px; color: var(--text-secondary);
-  letter-spacing: 0.15em;
-  margin-bottom: 4px;
-}
-.r-title { font-size: 22px; font-weight: 500; line-height: 1.1; }
-.r-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-.r-header-right {
-  font-size: 10px; color: var(--text-secondary);
-  text-align: right;
-}
+    /* ERROR */
+    .error-block {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      background-color: var(--error-bg);
+      border-left: 2px solid var(--error);
+    }
+    .error-block svg { color: var(--error); flex-shrink: 0; margin-top: 0.125rem; }
+    .error-block p { font-size: 0.875rem; color: var(--error-text); }
 
-.r-section-label {
-  font-size: 11px; color: var(--text-secondary);
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-}
+    /* RESULTS */
+    .results { margin-top: 3rem; }
+    .results-meta {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--line);
+    }
 
-.r-block {
-  border: 0.5px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem 1.25rem;
-  margin-bottom: 1.5rem;
-  background: white;
-}
-.r-block-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.r-block-grid .r-block { margin-bottom: 0; }
+    .date-group { margin-bottom: 2.25rem; }
+    .date-group:last-child { margin-bottom: 0; }
 
-.perf-label {
-  font-size: 11px; color: var(--text-secondary);
-  text-transform: uppercase; letter-spacing: 0.05em;
-  margin-bottom: 4px;
-}
-.big-number {
-  font-size: 36px; font-weight: 500; line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-.big-number.mid { font-size: 26px; }
-.badge {
-  display: inline-block;
-  font-size: 12px;
-  padding: 3px 9px;
-  border-radius: 8px;
-  vertical-align: middle;
-}
-.badge.up { background: var(--green-bg); color: var(--green-fg); }
-.badge.down { background: var(--red-bg); color: var(--red-fg); }
-.badge.neutral { background: var(--bg-soft); color: var(--text-secondary); }
-.perf-meta {
-  font-size: 11px; color: var(--text-secondary);
-  margin-top: 4px;
-  font-variant-numeric: tabular-nums;
-}
-.perf-row {
-  display: grid;
-  grid-template-columns: 1fr 240px;
-  gap: 1.5rem;
-  align-items: center;
-}
+    .date-header {
+      font-family: var(--font-display);
+      font-size: 1.625rem;
+      font-weight: 400;
+      line-height: 1.2;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+    .date-header .weekday::first-letter { text-transform: uppercase; }
 
-/* KPI */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-.kpi-card {
-  background: var(--bg-soft);
-  padding: 0.75rem;
-  border-radius: 8px;
-}
-.kpi-label {
-  font-size: 10px; color: var(--text-secondary);
-  margin-bottom: 2px;
-}
-.kpi-value {
-  font-size: 18px; font-weight: 500; line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-.kpi-foot {
-  font-size: 10px; margin-top: 2px;
-  font-variant-numeric: tabular-nums;
-}
-.kpi-foot.up { color: var(--green-fg); }
-.kpi-foot.down { color: var(--red-fg); }
-.kpi-foot.neutral { color: var(--text-secondary); }
+    .pos-table { width: 100%; border-top: 1px solid var(--line); }
+    .pos-row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .pos-row:last-child { border-bottom: 1px solid var(--line); }
 
-/* Répartition */
-.repart-row { margin-bottom: 14px; }
-.repart-row:last-child { margin-bottom: 0; }
-.repart-head {
-  display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 12px; margin-bottom: 4px;
-}
-.repart-head .swatch {
-  display: inline-block;
-  width: 9px; height: 9px;
-  border-radius: 2px; vertical-align: middle;
-  margin-right: 6px;
-}
-.repart-head .nums { font-variant-numeric: tabular-nums; }
-.repart-head .nums b { font-weight: 500; }
-.repart-bar-bg {
-  height: 12px;
-  background: var(--bg-soft);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.repart-bar-fill { height: 100%; }
-.repart-foot {
-  font-size: 10px; color: var(--text-secondary);
-  margin-top: 2px;
-  font-variant-numeric: tabular-nums;
-}
-.repart-foot .down { color: var(--red-fg); }
-.repart-foot .up { color: var(--green-fg); }
+    .pos-name {
+      flex: 1;
+      font-size: 0.9375rem;
+      color: var(--ink);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pos-amount {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 0.9375rem;
+      color: var(--ink);
+      text-align: right;
+      min-width: 6rem;
+    }
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      padding: 0.25rem 0.625rem;
+      color: var(--muted);
+      border: 1px solid var(--muted-softer);
+      background: transparent;
+      transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover:not(.copied) { color: var(--ink); border-color: var(--ink); }
+    .copy-btn.copied {
+      color: var(--accent);
+      border-color: var(--accent);
+      background-color: var(--accent-soft);
+    }
 
-.block-title {
-  font-size: 11px; color: var(--text-secondary);
-  letter-spacing: 0.05em; text-transform: uppercase;
-  margin-bottom: 0.75rem;
-}
+    .errors-section {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--line);
+    }
+    .errors-section .errors-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--error);
+      margin-bottom: 0.75rem;
+    }
+    .error-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.625rem;
+      font-size: 0.875rem;
+      padding: 0.5rem 0;
+    }
+    .error-row svg { color: var(--error); flex-shrink: 0; margin-top: 0.125rem; }
+    .error-row .error-filename { font-weight: 500; }
+    .error-row .error-msg { color: var(--muted); margin-top: 0.125rem; }
 
-/* Tableau */
-.day-table {
-  width: 100%; border-collapse: collapse;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-}
-.day-table th {
-  text-align: right;
-  padding: 6px 4px;
-  color: var(--text-secondary); font-weight: 500;
-  border-bottom: 0.5px solid #b4b2a9;
-}
-.day-table th:first-child, .day-table th.left-col { text-align: left; }
-.day-table th.evo-col { text-align: left; width: 22%; }
-.day-table td {
-  text-align: right;
-  padding: 6px 4px;
-  border-bottom: 0.5px solid var(--border);
-}
-.day-table td:first-child { text-align: left; }
-.day-table tr.peak { background: var(--amber-bg); }
-.day-table tr.peak td { font-weight: 500; }
-.day-table tr.peak .evo-bar-bg { background: white; }
-.day-table tr.closed td { color: var(--text-tertiary); }
-.day-table tr.total td {
-  border-top: 1px solid var(--brand-red);
-  border-bottom: none;
-  padding: 7px 4px;
-  font-weight: 500;
-}
-.evo-bar-cell { padding: 6px 4px; vertical-align: middle; }
-.evo-bar-bg {
-  height: 6px; background: var(--bg-soft);
-  border-radius: 3px; position: relative;
-}
-.evo-bar-fill {
-  position: absolute; height: 100%;
-  border-radius: 3px; top: 0;
-}
-.evo-bar-fill.up { background: var(--green-bar); left: 50%; }
-.evo-bar-fill.down { background: var(--red-bar); right: 50%; }
-.col-up { color: var(--green-fg); }
-.col-down { color: var(--red-fg); }
+    /* HELP */
+    .help-text {
+      margin-top: 4rem;
+      font-size: 0.75rem;
+      color: var(--muted-soft);
+      max-width: 30rem;
+      line-height: 1.6;
+    }
+    .help-text .inline-mono { color: var(--muted); }
 
-.legend {
-  margin-top: 0.75rem;
-  font-size: 10px;
-  color: var(--text-secondary);
-  display: flex; gap: 1rem; flex-wrap: wrap;
-}
-.legend .sw {
-  display: inline-block; width: 10px; height: 10px;
-  border-radius: 2px; vertical-align: middle; margin-right: 4px;
-}
-
-.footer-page {
-  margin-top: auto;
-  padding-top: 1rem;
-  font-size: 10px;
-  color: var(--text-tertiary);
-  border-top: 0.5px solid var(--border-light);
-  display: flex; justify-content: space-between;
-}
-</style>
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.4s ease-out; }
+  </style>
 </head>
 <body>
+  <main>
+    <header class="header">
+      <p class="header-kicker">Comptabilité — Outil</p>
+      <h1><em>Extraction</em><br>du chiffre d'affaires</h1>
+      <p>
+        Déposez un ou plusieurs exports CSV d'écritures comptables.
+        Les lignes de vente (comptes <span class="inline-mono">707xxx</span>)
+        sont additionnées par couple point de vente / jour, puis triées par
+        date et par point de vente.
+      </p>
+    </header>
 
-<!-- ============================================ -->
-<!--  UI Shell (cachée à l'impression)            -->
-<!-- ============================================ -->
-<div class="ui-shell" id="uiShell">
-  <div class="ui-shell-header">
-    <div class="ui-logo"><svg id="Calque_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 222 103"> <g> <g> <g> <path d="M103.89,29.39c.53.41,1.05.7,1.63.88.58.18,1.11.53,1.63.99.53.47.76,1.11.76,1.87s-4.08,31.81-4.08,32.22c0,.93.35,1.58,1.05,1.93s1.87.53,3.51.53h.23c1.75,0,3.04-.23,3.86-.7.82-.47,1.28-1.28,1.46-2.39l1.97-14.62,8.89-.11c1.52,0,2.58-.35,3.16-1.05s.88-1.93.88-3.74c0-1.05-.53-1.58-1.63-1.58-.35,0-1.58.06-3.68.18-2.1.12-5.74.28-6.91.28l1.4-11.16c.18-1.11.41-1.81.76-2.16.35-.35,1.17-.53,2.45-.53h2.15c1.63,0,2.69.23,3.16.64.47.41.88,1.52,1.28,3.33.29,1.52.64,2.57,1.05,3.09s.93.82,1.58.82c1.46,0,2.57-1.23,3.33-3.74.76-2.51,1.11-5.03,1.11-7.54,0-.88-.23-1.58-.64-2.04-.41-.47-1.17-.7-2.22-.76-2.74-.18-4.13-.29-9.45-.29-4.76,0-14.04.34-14.37.35-2.22.12-3.63.41-4.21.82s-.88,1.4-.88,2.92c0,.64.23,1.17.76,1.58h0Z" style="fill: #fff;"/> <path d="M136.66,41.57c.53.42,1.07.71,1.66.89.59.18,1.13.53,1.66,1.01s.77,1.13.77,1.9c0,.42-.42,2.85-1.25,7.24-.83,4.39-1.25,7.3-1.25,8.73,0,2.08.59,3.68,1.72,4.81s2.79,1.66,4.98,1.66c0,0,3.28.34,7.06-2.31,2.04-1.42,3.79-3.32,5.16-5.93-.18,1.36-.3,2.25-.3,2.67,0,3.5,1.9,5.28,5.64,5.28,2.5,0,4.81-.72,7.01-2.08s3.26-3.09,3.26-5.17c0-.65-.12-1.25-.36-1.72s-.47-.72-.72-.72c-.06,0-.53.12-1.36.3-.83.18-1.48.3-1.96.3-.72,0-1.07-.36-1.07-1.13,0-.59.36-3.86,1.12-9.79.77-5.93,1.13-9.02,1.13-9.32,0-.89-.36-1.54-1.07-1.9-.72-.36-1.9-.53-3.62-.53-1.84,0-3.14.24-3.98.71-.83.47-1.31,1.31-1.48,2.44l-1.31,10.97c-.36,2.91-1.25,5.34-2.67,7.3s-3.09,2.97-4.98,2.97c-1.25,0-1.9-.77-1.9-2.31,0-1.13.47-4.33,1.42-9.55.95-5.22,1.42-8.37,1.42-9.43,0-1.12-.47-1.9-1.42-2.37-.95-.47-2.85-.71-5.64-.71-2.55,0-4.45.18-5.63.47-1.19.3-1.96.72-2.31,1.25-.36.53-.53,1.36-.53,2.5,0,.65.23,1.19.77,1.61h-.01Z" style="fill: #fff;"/> <path d="M174.17,41.92c.53.42,1.07.72,1.66.89.59.18,1.12.53,1.66,1.01.53.47.77,1.12.77,1.9,0,.59-.42,3.98-1.19,10.08-.77,6.11-1.19,9.38-1.19,9.73,0,.95.36,1.6,1.07,1.96.72.36,1.9.53,3.5.53,0,0,2.56,0,4.28-.95.84-.47,1.31-1.31,1.48-2.44l1.07-9.02c.42-3.38,1.36-6.17,2.91-8.37,1.54-2.2,3.14-3.32,4.87-3.32.77,0,1.36.24,1.78.72.42.47.59,1.36.59,2.61,0,.95-.3,3.39-.83,7.36-.53,3.98-.83,6.53-.83,7.71,0,1.66.47,2.97,1.42,3.98s2.31,1.48,4.15,1.48c2.44,0,4.69-.72,6.82-2.2,2.14-1.48,3.2-3.14,3.2-4.98,0-.66-.12-1.25-.36-1.72s-.47-.72-.72-.72c-.06,0-.47.12-1.25.3-.77.18-1.36.3-1.78.3-.72,0-1.07-.36-1.07-1.12,0-.3.24-2.31.72-6.06.47-3.74.72-6.23.72-7.48,0-5.34-2.31-8.01-6.95-8.01-2.37,0-4.68.72-6.88,2.14-2.2,1.42-4.09,3.62-5.7,6.59.42-3.14.59-5.04.59-5.64,0-1.13-.47-1.9-1.42-2.37s-2.73-.72-5.28-.72-4.45.18-5.7.47c-1.25.3-2.02.72-2.37,1.25-.36.53-.53,1.36-.53,2.5,0,.66.24,1.19.77,1.61h0Z" style="fill: #fff;"/> </g> <g> <path d="M100.32,78.73c.43-.58.96-1.04,1.59-1.37s1.31-.49,2.05-.49c.9,0,1.63.24,2.18.71.55.47.87,1.12.94,1.94h-2.03c-.09-.31-.26-.55-.51-.71s-.55-.24-.91-.24c-.57,0-1.06.2-1.47.59s-.69.91-.8,1.57c-.04.2-.05.38-.05.53,0,.5.14.9.42,1.2.28.29.66.45,1.15.45.35,0,.68-.08.99-.25s.56-.4.77-.72h2.03c-.36.82-.9,1.47-1.63,1.93-.73.47-1.54.71-2.44.71-.65,0-1.21-.12-1.69-.38-.48-.25-.85-.61-1.11-1.07-.26-.46-.39-.99-.39-1.61,0-.27.02-.54.07-.8.13-.74.41-1.42.84-2h-.01Z" style="fill: #fff;"/> <path d="M112.01,83.19h-2.82l-.69,1.34h-1.93l4.07-7.57h2.14l1.4,7.57h-1.95l-.22-1.34h0ZM111.8,81.79l-.45-2.8-1.44,2.8h1.89Z" style="fill: #fff;"/> <path d="M120.91,80.6c-.26.36-.63.66-1.08.88-.46.23-.99.34-1.61.34h-1.15l-.49,2.71h-1.85l1.34-7.57h2.98c.79,0,1.39.18,1.79.53.4.35.61.82.61,1.42,0,.18-.01.34-.04.5-.07.44-.24.84-.5,1.2h0ZM119.54,79.39c.01-.12.02-.2.02-.25,0-.23-.07-.41-.22-.53-.15-.12-.37-.19-.67-.19h-1l-.34,1.94h.99c.69,0,1.09-.32,1.22-.97h0Z" style="fill: #fff;"/> <path d="M124.43,84.06c-.51-.36-.77-.86-.77-1.52,0-.07,0-.16.02-.29h1.92c-.02.27.04.49.2.65s.38.24.69.24c.28,0,.5-.06.66-.18s.24-.29.24-.52-.1-.42-.31-.56c-.2-.15-.53-.31-.96-.49-.42-.18-.76-.34-1.02-.49-.26-.15-.49-.36-.69-.63s-.29-.6-.29-1c0-.5.12-.93.36-1.29s.6-.65,1.04-.84.96-.29,1.53-.29c.52,0,.98.08,1.38.24.4.16.72.39.94.7.23.31.34.66.34,1.09,0,.11,0,.19,0,.24h-1.96s0-.07,0-.13c0-.2-.07-.36-.21-.49s-.34-.19-.58-.19c-.26,0-.47.07-.63.19-.16.12-.24.3-.24.51s.1.39.3.55c.2.15.51.32.94.51.42.2.77.37,1.04.54s.5.39.69.66c.2.28.29.61.29,1.02,0,.45-.12.85-.36,1.2-.23.35-.58.63-1.02.82-.45.2-.96.3-1.56.3-.82,0-1.49-.18-2-.53v-.02Z" style="fill: #fff;"/> <path d="M133.01,76.96l-.8,4.52c-.03.19-.04.31-.04.39,0,.33.09.58.28.76.19.18.47.26.83.26.43,0,.78-.12,1.06-.36s.45-.59.53-1.04l.8-4.52h1.85l-.8,4.52c-.12.69-.36,1.26-.73,1.73-.36.47-.8.82-1.33,1.05-.52.23-1.09.34-1.7.34-.79,0-1.43-.2-1.91-.61s-.73-1-.73-1.78c0-.23.02-.47.07-.73l.79-4.52h1.85,0Z" style="fill: #fff;"/> <path d="M143.41,77.49c.41.36.61.82.61,1.39,0,.17-.01.32-.04.47-.09.5-.31.95-.66,1.35s-.82.68-1.42.84l1.22,3h-2.08l-1.07-2.86h-.45l-.51,2.86h-1.85l1.34-7.57h3.09c.78,0,1.38.18,1.79.53h.01ZM142.11,79.19c0-.23-.07-.41-.22-.53-.15-.12-.36-.19-.65-.19h-1.15l-.34,1.9h1.14c.34,0,.61-.08.8-.25s.33-.4.39-.7c.01-.12.02-.19.02-.23Z" style="fill: #fff;"/> <path d="M148.26,83.12h2.42l-.25,1.4h-4.26l1.34-7.57h1.85l-1.09,6.17h0Z" style="fill: #fff;"/> <path d="M153.96,78.41l-.27,1.58h2.47l-.25,1.39h-2.47l-.3,1.69h2.79l-.26,1.45h-4.63l1.34-7.57h4.63l-.26,1.45h-2.8Z" style="fill: #fff;"/> <path d="M165.09,76.96l-.26,1.45h-3.09l-.28,1.63h2.31l-.26,1.4h-2.31l-.54,3.09h-1.85l1.34-7.57h4.93Z" style="fill: #fff;"/> <path d="M169.4,83.19h-2.82l-.69,1.34h-1.93l4.08-7.57h2.14l1.4,7.57h-1.95l-.22-1.34ZM169.19,81.79l-.45-2.8-1.44,2.8h1.89Z" style="fill: #fff;"/> <path d="M178.35,77.49c.41.36.61.82.61,1.39,0,.17-.01.32-.04.47-.09.5-.31.95-.66,1.35-.35.39-.82.68-1.42.84l1.22,3h-2.08l-1.07-2.86h-.45l-.5,2.86h-1.85l1.34-7.57h3.09c.78,0,1.38.18,1.79.53h0ZM177.06,79.19c0-.23-.07-.41-.22-.53-.15-.12-.36-.19-.65-.19h-1.15l-.34,1.9h1.15c.34,0,.61-.08.8-.25.2-.17.33-.4.38-.7.01-.12.02-.19.02-.23Z" style="fill: #fff;"/> <path d="M192.86,76.96l-3.31,7.57h-2.23l-.34-4.97-2.12,4.97h-2.23l-.58-7.57h1.97l.12,5.51,2.32-5.51h2.04l.32,5.48,2.06-5.48h2Z" style="fill: #fff;"/> <path d="M195.1,78.41l-.27,1.58h2.47l-.25,1.39h-2.47l-.3,1.69h2.79l-.26,1.45h-4.63l1.34-7.57h4.63l-.26,1.45h-2.8Z" style="fill: #fff;"/> <path d="M198.75,84.06c-.51-.36-.77-.86-.77-1.52,0-.07,0-.16.02-.29h1.92c-.02.27.04.49.2.65s.38.24.69.24c.28,0,.5-.06.66-.18s.24-.29.24-.52-.1-.42-.31-.56c-.2-.15-.53-.31-.96-.49-.42-.18-.76-.34-1.02-.49s-.49-.36-.69-.63-.29-.6-.29-1c0-.5.12-.93.36-1.29s.6-.65,1.04-.84.96-.29,1.53-.29c.52,0,.98.08,1.38.24s.72.39.94.7c.22.31.34.66.34,1.09,0,.11,0,.19,0,.24h-1.96s0-.07,0-.13c0-.2-.07-.36-.21-.49s-.34-.19-.58-.19c-.26,0-.47.07-.63.19s-.24.3-.24.51.1.39.3.55c.2.15.51.32.94.51.42.2.77.37,1.04.54s.5.39.69.66c.2.28.29.61.29,1.02,0,.45-.12.85-.36,1.2s-.58.63-1.02.82c-.45.2-.97.3-1.56.3-.82,0-1.49-.18-2-.53v-.02Z" style="fill: #fff;"/> <path d="M210.97,76.96l-.25,1.45h-2.01l-1.08,6.11h-1.85l1.08-6.11h-2.01l.26-1.45h5.86Z" style="fill: #fff;"/> </g> </g> <path d="M52.11,22.1h0c-9.6,1.53-18.66,15.98-20.39,32.75-1.15,11.08,1.2,21.06,6.16,26.04,2.39,2.42,5.28,3.52,8.38,3.23,8.65-.85,17.01-12.35,20.11-26.78.42-1.97.74-4.01.96-6.07.04-.33.07-.66.09-.99s.32-.61.66-.6c1.36.04,2.71-.01,4.04-.15,6.33-.68,10.68-3.05,15.11-7.97.28-.31.58-.65.87-1.01.17-.2.51-.11.54.15.45,3.32.58,6.74.39,10.18-1.41,25.88-20.18,48.13-41.83,49.58-.74.05-1.47.08-2.2.08-8.43,0-16.34-3.28-22.49-9.37-8.45-8.35-12.86-21.14-12.11-35.06C11.81,30.24,30.57,7.99,52.24,6.53c2.93-.19,5.79,0,8.54.55-4.21,4.83-.28,11.57-.28,11.57-.79-5.04,1.05-7.97,3.05-9.62.59-.49,1.26-.88,1.95-1.2l.1-.05.28-.13c6.48-2.54,11.21-3.04,11.21-3.04l-4.83,6.2-.7.9s.02.02.04.03c.23-.27.53-.58.85-.93,0,0,.01,0,.02.01,2.34-2.56,5.45-4.98,7.68-6.08,3.33-1.64,7.23-2.59,9.84-.59,4.64,3.55,7.45,12.42,7.45,12.42,0,0-4.7,6.76-13.11,10.67-2.93,1.36-6.24,2.5-9.85,3.09-8.15,1.32-10.73-8.54-19.84-8.59-.83,0-1.66.1-2.48.32-.02,0-.05,0-.08.02h.01Z" style="fill: #fff;"/> <path d="M94.89,22.37c-1.57,2.49-5.01,9.08-9.43,13.87s-8.78,7.28-15.12,7.96c-10.55,1.12-23.22-3.71-25.02-9.56-1.71-5.52,7.05-11.84,13.25-9.08,5.06,2.25,8.69,10.06,19.28,6.75,10.38-3.24,16.82-9.7,17.04-9.94h0Z" style="fill: #fff;"/> </g> <path d="M106.87,16.62c-7.57,5-14.2,13.43-14.4,13.69.15-.4,8.65-21.81,15.97-22.88,7.39-1.08,4.99,4.86-1.57,9.19h0Z" style="fill: #fff;"/> </svg></div>
-    <div>
-      <div class="ui-shell-title">Générateur de rapport hebdomadaire — Snacks O'Fun Park</div>
-      <div class="ui-shell-subtitle">Glissez votre fichier <code>CA_OFUN_SNACKS_2026.xlsx</code> et sélectionnez la semaine à présenter en Codir.</div>
-    </div>
-  </div>
+    <div id="upload-zone" class="upload-zone" data-action="open-picker"></div>
+    <input type="file" id="file-input" accept=".csv" multiple style="display:none">
 
-  <div class="file-drop" id="dropZone" role="button" tabindex="0">
-    <div class="file-drop-text">Glisser-déposer le fichier ici, ou <strong>cliquer pour sélectionner</strong></div>
-    <div class="file-drop-name" id="fileName"></div>
-  </div>
-  <input type="file" id="fileInput" accept=".xlsx,.xls" hidden>
+    <div id="actions" class="actions"></div>
+    <div id="error-block"></div>
+    <div id="results-block"></div>
+    <div id="help-block"></div>
+  </main>
 
-  <div class="ui-controls">
-    <label for="weekSelect">Semaine :</label>
-    <select id="weekSelect" disabled>
-      <option value="">— Charger un fichier d'abord —</option>
-    </select>
-    <button class="primary" id="btnPrint" disabled onclick="window.print()">Imprimer</button>
-    <button class="secondary" id="btnReset" disabled>Recommencer</button>
-  </div>
+  <script>
+  (() => {
+    'use strict';
 
-  <div class="log-zone empty" id="logZone"></div>
-</div>
-
-<!-- ============================================ -->
-<!--  Rapport (pages 1 et 2)                      -->
-<!-- ============================================ -->
-<div class="report-container" id="reportContainer">
-  <div class="page-sheet" id="page1"></div>
-  <div class="page-sheet" id="page2"></div>
-</div>
-
-<script>
-// ============================================
-//  LOGO SVG (inline, ~8 KB)
-// ============================================
-const LOGO_SVG = `<svg id="Calque_1" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 222 103"> <g> <g> <g> <path d="M103.89,29.39c.53.41,1.05.7,1.63.88.58.18,1.11.53,1.63.99.53.47.76,1.11.76,1.87s-4.08,31.81-4.08,32.22c0,.93.35,1.58,1.05,1.93s1.87.53,3.51.53h.23c1.75,0,3.04-.23,3.86-.7.82-.47,1.28-1.28,1.46-2.39l1.97-14.62,8.89-.11c1.52,0,2.58-.35,3.16-1.05s.88-1.93.88-3.74c0-1.05-.53-1.58-1.63-1.58-.35,0-1.58.06-3.68.18-2.1.12-5.74.28-6.91.28l1.4-11.16c.18-1.11.41-1.81.76-2.16.35-.35,1.17-.53,2.45-.53h2.15c1.63,0,2.69.23,3.16.64.47.41.88,1.52,1.28,3.33.29,1.52.64,2.57,1.05,3.09s.93.82,1.58.82c1.46,0,2.57-1.23,3.33-3.74.76-2.51,1.11-5.03,1.11-7.54,0-.88-.23-1.58-.64-2.04-.41-.47-1.17-.7-2.22-.76-2.74-.18-4.13-.29-9.45-.29-4.76,0-14.04.34-14.37.35-2.22.12-3.63.41-4.21.82s-.88,1.4-.88,2.92c0,.64.23,1.17.76,1.58h0Z" style="fill: #fff;"/> <path d="M136.66,41.57c.53.42,1.07.71,1.66.89.59.18,1.13.53,1.66,1.01s.77,1.13.77,1.9c0,.42-.42,2.85-1.25,7.24-.83,4.39-1.25,7.3-1.25,8.73,0,2.08.59,3.68,1.72,4.81s2.79,1.66,4.98,1.66c0,0,3.28.34,7.06-2.31,2.04-1.42,3.79-3.32,5.16-5.93-.18,1.36-.3,2.25-.3,2.67,0,3.5,1.9,5.28,5.64,5.28,2.5,0,4.81-.72,7.01-2.08s3.26-3.09,3.26-5.17c0-.65-.12-1.25-.36-1.72s-.47-.72-.72-.72c-.06,0-.53.12-1.36.3-.83.18-1.48.3-1.96.3-.72,0-1.07-.36-1.07-1.13,0-.59.36-3.86,1.12-9.79.77-5.93,1.13-9.02,1.13-9.32,0-.89-.36-1.54-1.07-1.9-.72-.36-1.9-.53-3.62-.53-1.84,0-3.14.24-3.98.71-.83.47-1.31,1.31-1.48,2.44l-1.31,10.97c-.36,2.91-1.25,5.34-2.67,7.3s-3.09,2.97-4.98,2.97c-1.25,0-1.9-.77-1.9-2.31,0-1.13.47-4.33,1.42-9.55.95-5.22,1.42-8.37,1.42-9.43,0-1.12-.47-1.9-1.42-2.37-.95-.47-2.85-.71-5.64-.71-2.55,0-4.45.18-5.63.47-1.19.3-1.96.72-2.31,1.25-.36.53-.53,1.36-.53,2.5,0,.65.23,1.19.77,1.61h-.01Z" style="fill: #fff;"/> <path d="M174.17,41.92c.53.42,1.07.72,1.66.89.59.18,1.12.53,1.66,1.01.53.47.77,1.12.77,1.9,0,.59-.42,3.98-1.19,10.08-.77,6.11-1.19,9.38-1.19,9.73,0,.95.36,1.6,1.07,1.96.72.36,1.9.53,3.5.53,0,0,2.56,0,4.28-.95.84-.47,1.31-1.31,1.48-2.44l1.07-9.02c.42-3.38,1.36-6.17,2.91-8.37,1.54-2.2,3.14-3.32,4.87-3.32.77,0,1.36.24,1.78.72.42.47.59,1.36.59,2.61,0,.95-.3,3.39-.83,7.36-.53,3.98-.83,6.53-.83,7.71,0,1.66.47,2.97,1.42,3.98s2.31,1.48,4.15,1.48c2.44,0,4.69-.72,6.82-2.2,2.14-1.48,3.2-3.14,3.2-4.98,0-.66-.12-1.25-.36-1.72s-.47-.72-.72-.72c-.06,0-.47.12-1.25.3-.77.18-1.36.3-1.78.3-.72,0-1.07-.36-1.07-1.12,0-.3.24-2.31.72-6.06.47-3.74.72-6.23.72-7.48,0-5.34-2.31-8.01-6.95-8.01-2.37,0-4.68.72-6.88,2.14-2.2,1.42-4.09,3.62-5.7,6.59.42-3.14.59-5.04.59-5.64,0-1.13-.47-1.9-1.42-2.37s-2.73-.72-5.28-.72-4.45.18-5.7.47c-1.25.3-2.02.72-2.37,1.25-.36.53-.53,1.36-.53,2.5,0,.66.24,1.19.77,1.61h0Z" style="fill: #fff;"/> </g> <g> <path d="M100.32,78.73c.43-.58.96-1.04,1.59-1.37s1.31-.49,2.05-.49c.9,0,1.63.24,2.18.71.55.47.87,1.12.94,1.94h-2.03c-.09-.31-.26-.55-.51-.71s-.55-.24-.91-.24c-.57,0-1.06.2-1.47.59s-.69.91-.8,1.57c-.04.2-.05.38-.05.53,0,.5.14.9.42,1.2.28.29.66.45,1.15.45.35,0,.68-.08.99-.25s.56-.4.77-.72h2.03c-.36.82-.9,1.47-1.63,1.93-.73.47-1.54.71-2.44.71-.65,0-1.21-.12-1.69-.38-.48-.25-.85-.61-1.11-1.07-.26-.46-.39-.99-.39-1.61,0-.27.02-.54.07-.8.13-.74.41-1.42.84-2h-.01Z" style="fill: #fff;"/> <path d="M112.01,83.19h-2.82l-.69,1.34h-1.93l4.07-7.57h2.14l1.4,7.57h-1.95l-.22-1.34h0ZM111.8,81.79l-.45-2.8-1.44,2.8h1.89Z" style="fill: #fff;"/> <path d="M120.91,80.6c-.26.36-.63.66-1.08.88-.46.23-.99.34-1.61.34h-1.15l-.49,2.71h-1.85l1.34-7.57h2.98c.79,0,1.39.18,1.79.53.4.35.61.82.61,1.42,0,.18-.01.34-.04.5-.07.44-.24.84-.5,1.2h0ZM119.54,79.39c.01-.12.02-.2.02-.25,0-.23-.07-.41-.22-.53-.15-.12-.37-.19-.67-.19h-1l-.34,1.94h.99c.69,0,1.09-.32,1.22-.97h0Z" style="fill: #fff;"/> <path d="M124.43,84.06c-.51-.36-.77-.86-.77-1.52,0-.07,0-.16.02-.29h1.92c-.02.27.04.49.2.65s.38.24.69.24c.28,0,.5-.06.66-.18s.24-.29.24-.52-.1-.42-.31-.56c-.2-.15-.53-.31-.96-.49-.42-.18-.76-.34-1.02-.49-.26-.15-.49-.36-.69-.63s-.29-.6-.29-1c0-.5.12-.93.36-1.29s.6-.65,1.04-.84.96-.29,1.53-.29c.52,0,.98.08,1.38.24.4.16.72.39.94.7.23.31.34.66.34,1.09,0,.11,0,.19,0,.24h-1.96s0-.07,0-.13c0-.2-.07-.36-.21-.49s-.34-.19-.58-.19c-.26,0-.47.07-.63.19-.16.12-.24.3-.24.51s.1.39.3.55c.2.15.51.32.94.51.42.2.77.37,1.04.54s.5.39.69.66c.2.28.29.61.29,1.02,0,.45-.12.85-.36,1.2-.23.35-.58.63-1.02.82-.45.2-.96.3-1.56.3-.82,0-1.49-.18-2-.53v-.02Z" style="fill: #fff;"/> <path d="M133.01,76.96l-.8,4.52c-.03.19-.04.31-.04.39,0,.33.09.58.28.76.19.18.47.26.83.26.43,0,.78-.12,1.06-.36s.45-.59.53-1.04l.8-4.52h1.85l-.8,4.52c-.12.69-.36,1.26-.73,1.73-.36.47-.8.82-1.33,1.05-.52.23-1.09.34-1.7.34-.79,0-1.43-.2-1.91-.61s-.73-1-.73-1.78c0-.23.02-.47.07-.73l.79-4.52h1.85,0Z" style="fill: #fff;"/> <path d="M143.41,77.49c.41.36.61.82.61,1.39,0,.17-.01.32-.04.47-.09.5-.31.95-.66,1.35s-.82.68-1.42.84l1.22,3h-2.08l-1.07-2.86h-.45l-.51,2.86h-1.85l1.34-7.57h3.09c.78,0,1.38.18,1.79.53h.01ZM142.11,79.19c0-.23-.07-.41-.22-.53-.15-.12-.36-.19-.65-.19h-1.15l-.34,1.9h1.14c.34,0,.61-.08.8-.25s.33-.4.39-.7c.01-.12.02-.19.02-.23Z" style="fill: #fff;"/> <path d="M148.26,83.12h2.42l-.25,1.4h-4.26l1.34-7.57h1.85l-1.09,6.17h0Z" style="fill: #fff;"/> <path d="M153.96,78.41l-.27,1.58h2.47l-.25,1.39h-2.47l-.3,1.69h2.79l-.26,1.45h-4.63l1.34-7.57h4.63l-.26,1.45h-2.8Z" style="fill: #fff;"/> <path d="M165.09,76.96l-.26,1.45h-3.09l-.28,1.63h2.31l-.26,1.4h-2.31l-.54,3.09h-1.85l1.34-7.57h4.93Z" style="fill: #fff;"/> <path d="M169.4,83.19h-2.82l-.69,1.34h-1.93l4.08-7.57h2.14l1.4,7.57h-1.95l-.22-1.34ZM169.19,81.79l-.45-2.8-1.44,2.8h1.89Z" style="fill: #fff;"/> <path d="M178.35,77.49c.41.36.61.82.61,1.39,0,.17-.01.32-.04.47-.09.5-.31.95-.66,1.35-.35.39-.82.68-1.42.84l1.22,3h-2.08l-1.07-2.86h-.45l-.5,2.86h-1.85l1.34-7.57h3.09c.78,0,1.38.18,1.79.53h0ZM177.06,79.19c0-.23-.07-.41-.22-.53-.15-.12-.36-.19-.65-.19h-1.15l-.34,1.9h1.15c.34,0,.61-.08.8-.25.2-.17.33-.4.38-.7.01-.12.02-.19.02-.23Z" style="fill: #fff;"/> <path d="M192.86,76.96l-3.31,7.57h-2.23l-.34-4.97-2.12,4.97h-2.23l-.58-7.57h1.97l.12,5.51,2.32-5.51h2.04l.32,5.48,2.06-5.48h2Z" style="fill: #fff;"/> <path d="M195.1,78.41l-.27,1.58h2.47l-.25,1.39h-2.47l-.3,1.69h2.79l-.26,1.45h-4.63l1.34-7.57h4.63l-.26,1.45h-2.8Z" style="fill: #fff;"/> <path d="M198.75,84.06c-.51-.36-.77-.86-.77-1.52,0-.07,0-.16.02-.29h1.92c-.02.27.04.49.2.65s.38.24.69.24c.28,0,.5-.06.66-.18s.24-.29.24-.52-.1-.42-.31-.56c-.2-.15-.53-.31-.96-.49-.42-.18-.76-.34-1.02-.49s-.49-.36-.69-.63-.29-.6-.29-1c0-.5.12-.93.36-1.29s.6-.65,1.04-.84.96-.29,1.53-.29c.52,0,.98.08,1.38.24s.72.39.94.7c.22.31.34.66.34,1.09,0,.11,0,.19,0,.24h-1.96s0-.07,0-.13c0-.2-.07-.36-.21-.49s-.34-.19-.58-.19c-.26,0-.47.07-.63.19s-.24.3-.24.51.1.39.3.55c.2.15.51.32.94.51.42.2.77.37,1.04.54s.5.39.69.66c.2.28.29.61.29,1.02,0,.45-.12.85-.36,1.2s-.58.63-1.02.82c-.45.2-.97.3-1.56.3-.82,0-1.49-.18-2-.53v-.02Z" style="fill: #fff;"/> <path d="M210.97,76.96l-.25,1.45h-2.01l-1.08,6.11h-1.85l1.08-6.11h-2.01l.26-1.45h5.86Z" style="fill: #fff;"/> </g> </g> <path d="M52.11,22.1h0c-9.6,1.53-18.66,15.98-20.39,32.75-1.15,11.08,1.2,21.06,6.16,26.04,2.39,2.42,5.28,3.52,8.38,3.23,8.65-.85,17.01-12.35,20.11-26.78.42-1.97.74-4.01.96-6.07.04-.33.07-.66.09-.99s.32-.61.66-.6c1.36.04,2.71-.01,4.04-.15,6.33-.68,10.68-3.05,15.11-7.97.28-.31.58-.65.87-1.01.17-.2.51-.11.54.15.45,3.32.58,6.74.39,10.18-1.41,25.88-20.18,48.13-41.83,49.58-.74.05-1.47.08-2.2.08-8.43,0-16.34-3.28-22.49-9.37-8.45-8.35-12.86-21.14-12.11-35.06C11.81,30.24,30.57,7.99,52.24,6.53c2.93-.19,5.79,0,8.54.55-4.21,4.83-.28,11.57-.28,11.57-.79-5.04,1.05-7.97,3.05-9.62.59-.49,1.26-.88,1.95-1.2l.1-.05.28-.13c6.48-2.54,11.21-3.04,11.21-3.04l-4.83,6.2-.7.9s.02.02.04.03c.23-.27.53-.58.85-.93,0,0,.01,0,.02.01,2.34-2.56,5.45-4.98,7.68-6.08,3.33-1.64,7.23-2.59,9.84-.59,4.64,3.55,7.45,12.42,7.45,12.42,0,0-4.7,6.76-13.11,10.67-2.93,1.36-6.24,2.5-9.85,3.09-8.15,1.32-10.73-8.54-19.84-8.59-.83,0-1.66.1-2.48.32-.02,0-.05,0-.08.02h.01Z" style="fill: #fff;"/> <path d="M94.89,22.37c-1.57,2.49-5.01,9.08-9.43,13.87s-8.78,7.28-15.12,7.96c-10.55,1.12-23.22-3.71-25.02-9.56-1.71-5.52,7.05-11.84,13.25-9.08,5.06,2.25,8.69,10.06,19.28,6.75,10.38-3.24,16.82-9.7,17.04-9.94h0Z" style="fill: #fff;"/> </g> <path d="M106.87,16.62c-7.57,5-14.2,13.43-14.4,13.69.15-.4,8.65-21.81,15.97-22.88,7.39-1.08,4.99,4.86-1.57,9.19h0Z" style="fill: #fff;"/> </svg>`;
-
-// ============================================
-//  HELPERS
-// ============================================
-function normalizeRange(sheet) {
-  if (sheet && sheet['!ref']) {
-    const dec = XLSX.utils.decode_range(sheet['!ref']);
-    dec.s.c = 0; dec.s.r = 0;
-    sheet['!ref'] = XLSX.utils.encode_range(dec);
-  }
-}
-
-const toNumber = (v) => {
-  if (v === null || v === undefined || v === '' || v === '#DIV/0!') return null;
-  if (typeof v === 'number') return v;
-  const n = parseFloat(String(v).replace(',', '.'));
-  return Number.isNaN(n) ? null : n;
-};
-
-const findIdx = (aoa, label, fromIdx = 0, toIdx = Infinity) => {
-  for (let i = fromIdx; i < Math.min(aoa.length, toIdx); i++) {
-    if ((aoa[i] || [])[1] === label) return i;
-  }
-  return -1;
-};
-
-function pct(num, denom) {
-  if (denom === null || denom === undefined || denom === 0) return null;
-  if (num === null || num === undefined) return null;
-  return (num - denom) / denom * 100;
-}
-function part(num, total) {
-  if (!total || total === 0) return null;
-  if (num === null || num === undefined) return null;
-  return num / total * 100;
-}
-
-const fmtMoney = (n, dec = 0) => {
-  if (n === null || n === undefined || Number.isNaN(n)) return '—';
-  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n) + ' €';
-};
-const fmtMoneyK = (n) => {
-  if (n === null || n === undefined || Number.isNaN(n)) return '—';
-  if (Math.abs(n) >= 1000) return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(n / 1000) + 'k';
-  return Math.round(n).toString();
-};
-const fmtPct = (n, dec = 1) => {
-  if (n === null || n === undefined || Number.isNaN(n)) return '—';
-  const sign = n > 0 ? '+' : '';
-  return sign + new Intl.NumberFormat('fr-FR', { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(n) + ' %';
-};
-const fmtNum = (n) => {
-  if (n === null || n === undefined || Number.isNaN(n)) return '—';
-  return new Intl.NumberFormat('fr-FR').format(n);
-};
-
-// ============================================
-//  PARSER
-// ============================================
-function parseWeekSheet(workbook, name) {
-  const sheet = workbook.Sheets[name];
-  if (!sheet) return null;
-  normalizeRange(sheet);
-  const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
-
-  const idxSnacks = findIdx(aoa, 'SNACKS');
-  const idxDistrib = findIdx(aoa, 'DISTRIBUTEURS', idxSnacks + 1);
-  const idxTotalGlobal = findIdx(aoa, 'TOTAL HT', 0, idxSnacks);
-  const idxTotalSnacks = findIdx(aoa, 'TOTAL HT', idxSnacks + 1, idxDistrib);
-  const idxTotalDistrib = findIdx(aoa, 'TOTAL HT', idxDistrib + 1);
-
-  const days7 = (row) => row ? row.slice(2, 9).map(toNumber) : [null,null,null,null,null,null,null];
-  const days7N = (row) => row ? row.slice(12, 19).map(toNumber) : [null,null,null,null,null,null,null];
-
-  const global_n1 = days7(aoa[idxTotalGlobal]);
-  const global_n  = days7N(aoa[idxTotalGlobal]);
-  const snacks_n1 = days7(aoa[idxTotalSnacks]);
-  const snacks_n  = days7N(aoa[idxTotalSnacks]);
-  const dist_n1   = days7(aoa[idxTotalDistrib]);
-  const dist_n    = days7N(aoa[idxTotalDistrib]);
-
-  const pdvSnacksLabels = ['EXPLORER CAMP', 'RUSH CANYON', 'BAR RUSH CANYON', 'SILVER LAKE'];
-  const snacks_pdv = pdvSnacksLabels.map((lab) => {
-    const idx = findIdx(aoa, lab, idxSnacks + 1, idxTotalSnacks);
-    if (idx < 0) return { label: lab, n1: null, n: null };
-    return {
-      label: lab,
-      n1: toNumber((aoa[idx] || [])[9]),
-      n:  toNumber((aoa[idx] || [])[19])
+    /* ICONS */
+    const iconPaths = {
+      upload:      '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><line x1="12" x2="12" y1="3" y2="15"/>',
+      copy:        '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+      check:       '<polyline points="20 6 9 17 4 12"/>',
+      fileText:    '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/>',
+      alertCircle: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+      rotateCcw:   '<path d="M3 12a9 9 0 1 0 9-9 9.74 9.74 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+      x:           '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     };
-  });
+    const icon = (name, size = 16) =>
+      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconPaths[name]}</svg>`;
 
-  const pdvDistribLabels = ['EXPLORER CAMP', 'RUSH CANYON'];
-  const dist_pdv = pdvDistribLabels.map((lab) => {
-    const idx = findIdx(aoa, lab, idxDistrib + 1, idxTotalDistrib);
-    if (idx < 0) return { label: lab, n1: null, n: null };
-    return {
-      label: lab,
-      n1: toNumber((aoa[idx] || [])[9]),
-      n:  toNumber((aoa[idx] || [])[19])
+    /* STATE */
+    const state = {
+      files: [],
+      results: [],
+      error: null,
+      isProcessing: false,
     };
-  });
+    let copiedKey = null;
 
-  const libelleN = (aoa[3] || [])[11];
-  const libelleN1 = (aoa[3] || [])[1];
-
-  const sumNum = (arr) => arr.reduce((a, v) => a + (v || 0), 0);
-
-  return {
-    name, libelleN, libelleN1,
-    global_n1, global_n,
-    total_n1: sumNum(global_n1), total_n: sumNum(global_n),
-    snacks_n1, snacks_n,
-    snacks_total_n1: sumNum(snacks_n1), snacks_total_n: sumNum(snacks_n),
-    dist_n1, dist_n,
-    dist_total_n1: sumNum(dist_n1), dist_total_n: sumNum(dist_n),
-    snacks_pdv, dist_pdv
-  };
-}
-
-// ============================================
-//  CALCULS DÉRIVÉS
-// ============================================
-function computeDerived(weekData, allWeeks, weekName) {
-  const sorted = [...allWeeks].sort((a, b) => {
-    const na = parseInt(a.name.replace(/\D/g, ''), 10);
-    const nb = parseInt(b.name.replace(/\D/g, ''), 10);
-    return na - nb;
-  });
-
-  // Trajectoire : on cumule jusqu'à la semaine sélectionnée INCLUSE, puis on s'arrête
-  // (on ne montre pas les semaines futures, même si elles sont dans le fichier)
-  let cumN1 = 0, cumN = 0;
-  const trajectory = [];
-  let cumN1Target = 0, cumNTarget = 0;
-  let reached = false;
-  for (const w of sorted) {
-    cumN1 += w.total_n1 || 0;
-    cumN  += w.total_n  || 0;
-    trajectory.push({
-      label: w.name, n: w.total_n, n1: w.total_n1,
-      cumN, cumN1
-    });
-    if (w.name === weekName) {
-      cumN1Target = cumN1;
-      cumNTarget = cumN;
-      reached = true;
-      break;  // on arrête la courbe à la semaine sélectionnée
+    function setState(updates) {
+      Object.assign(state, updates);
+      render();
     }
-  }
-  // Sécurité : si la semaine n'a pas été trouvée (cas improbable), on prend le dernier point
-  if (!reached && trajectory.length) {
-    cumN1Target = trajectory[trajectory.length - 1].cumN1;
-    cumNTarget  = trajectory[trajectory.length - 1].cumN;
-  }
 
-  // KPI : jour de pic, jours actifs, CA moyen / jour actif
-  const dayNames = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-  const days_n = weekData.global_n;
-  const days_n1 = weekData.global_n1;
+    /* HELPERS */
+    const monthNames = [
+      'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+      'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+    ];
+    const weekdayNames = [
+      'dimanche', 'lundi', 'mardi', 'mercredi',
+      'jeudi', 'vendredi', 'samedi'
+    ];
 
-  // Un jour est "actif" si CA > 0 (les jours fermés ont null ou 0)
-  const isActive = (v) => v !== null && v !== undefined && v > 0;
-  const isOpen   = (v) => v !== null && v !== undefined;  // jour ouvert même si 0 € (rare)
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+    }
 
-  const jours_actifs_n  = days_n.filter(isActive).length;
-  const jours_actifs_n1 = days_n1.filter(isActive).length;
+    function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise((resolve, reject) => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); resolve(); }
+        catch (err) { reject(err); }
+        finally { document.body.removeChild(ta); }
+      });
+    }
 
-  let pic_idx = -1, pic_val = -1;
-  days_n.forEach((v, i) => { if (v !== null && v > pic_val) { pic_val = v; pic_idx = i; } });
+    function formatAmount(amount) {
+      return amount.toFixed(2).replace('.', ',');
+    }
 
-  const ca_moy_n  = jours_actifs_n  > 0 ? weekData.total_n  / jours_actifs_n  : null;
-  const ca_moy_n1 = jours_actifs_n1 > 0 ? weekData.total_n1 / jours_actifs_n1 : null;
+    /* PARSING — format CSV
+       Chaque ligne = une écriture comptable avec colonnes claires.
+       Colonnes (1-indexées) :
+         1 : date JJ/MM/AAAA
+         3 : numéro de compte (707xxx = ventes HT)
+         4 : libellé (NOMPOS + DDMM, ex : "SNACKAP0406")
+         8 : crédit (en euros, virgule décimale)
+         9 : "C" ou "D"
 
-  // Détail jour par jour avec part snacks/distrib + flag "ouvert"
-  const dayDetails = dayNames.map((d, i) => {
-    const totalN = days_n[i];
-    const totalN1 = days_n1[i];
-    const snN = weekData.snacks_n[i];
-    const diN = weekData.dist_n[i];
-    // Jour fermé : à la fois N et N-1 sont null/0 -> on l'affiche en "—"
-    const closed = !isOpen(totalN) && !isOpen(totalN1);
-    return {
-      name: d,
-      n: totalN, n1: totalN1,
-      snacks_n: snN, dist_n: diN,
-      part_snacks: part(snN, totalN),
-      part_dist: part(diN, totalN),
-      evol: pct(totalN, totalN1),
-      closed,
-      is_peak: i === pic_idx && pic_val > 0
-    };
-  });
+       On garde uniquement les lignes en crédit dont le compte commence
+       par 707, on déduit POS et date, puis on agrège par (POS, jour). */
+    function parseFileContent(text) {
+      // Retire un éventuel BOM UTF-8 en tête
+      text = text.replace(/^\uFEFF/, '');
 
-  return {
-    trajectory,
-    cumN1Target, cumNTarget,
-    evol_total: pct(weekData.total_n, weekData.total_n1),
-    evol_cum: pct(cumNTarget, cumN1Target),
-    part_snacks_total: part(weekData.snacks_total_n, weekData.total_n),
-    part_dist_total:   part(weekData.dist_total_n,   weekData.total_n),
-    jours_actifs_n, jours_actifs_n1,
-    pic_name: pic_idx >= 0 ? dayNames[pic_idx] : '—',
-    pic_val,
-    pic_evol: pic_idx >= 0 ? pct(days_n[pic_idx], days_n1[pic_idx]) : null,
-    ca_moy_n, ca_moy_n1,
-    dayDetails
-  };
-}
+      const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+      if (lines.length === 0) throw new Error('Fichier vide.');
 
-// ============================================
-//  SVG : Mini bars de comparaison N-1 vs N
-// ============================================
-function renderCompareBars(valN1, valN) {
-  const maxV = Math.max(valN1 || 0, valN || 0, 1);
-  const h1 = (valN1 || 0) / maxV * 50;
-  const h2 = (valN  || 0) / maxV * 50;
-  return `<svg viewBox="0 0 240 90" style="width:100%;height:90px">
-    <text x="120" y="10" font-size="9" fill="#888780" text-anchor="middle">Comparaison N-1 vs N</text>
-    <rect x="40" y="${73 - h1}" width="60" height="${h1}" fill="#cca09c"/>
-    <rect x="140" y="${73 - h2}" width="60" height="${h2}" fill="#7b170f"/>
-    <text x="70" y="86" font-size="10" fill="#5f5e5a" text-anchor="middle">N-1</text>
-    <text x="170" y="86" font-size="10" fill="#5f5e5a" text-anchor="middle">N</text>
-    <text x="70" y="${68 - h1}" font-size="9" fill="#5f5e5a" text-anchor="middle">${fmtMoneyK(valN1)}</text>
-    <text x="170" y="${68 - h2}" font-size="9" fill="#7b170f" text-anchor="middle" font-weight="500">${fmtMoneyK(valN)}</text>
-  </svg>`;
-}
+      // Map clé "AAAAMMJJ|POS" -> objet bloc
+      const blocks = new Map();
+      let foundAny707 = false;
 
-// ============================================
-//  SVG : Courbe de trajectoire cumulée
-// ============================================
-function renderTrajectorySVG(trajectory) {
-  const W = 600, H = 140;
-  const padLeft = 40, padRight = 20, padTop = 20, padBottom = 25;
-  const innerW = W - padLeft - padRight, innerH = H - padTop - padBottom;
-  if (!trajectory.length) return `<svg viewBox="0 0 ${W} ${H}"></svg>`;
+      for (const line of lines) {
+        const cols = line.split(';');
+        if (cols.length < 9) continue;
 
-  const allVals = [];
-  trajectory.forEach(t => {
-    if (t.cumN  !== null) allVals.push(t.cumN);
-    if (t.cumN1 !== null) allVals.push(t.cumN1);
-  });
-  const maxV = Math.max(...allVals, 1) * 1.05;
+        const dateStr     = cols[0].trim();
+        const account     = cols[2].trim();
+        const label       = cols[3].trim();
+        const credit      = cols[7].trim();
+        const dcIndicator = cols[8].trim();
 
-  const n = trajectory.length;
-  const xOf = (i) => padLeft + (n === 1 ? innerW / 2 : (i / (n - 1)) * innerW);
-  const yOf = (v) => padTop + innerH - (v / maxV) * innerH;
+        // Seules les ventes HT (comptes 707xxx) en crédit nous intéressent
+        if (!account.startsWith('707')) continue;
+        if (dcIndicator !== 'C') continue;
+        foundAny707 = true;
 
-  // Grille horizontale (3 lignes + axe)
-  let gridLines = '';
-  const yLabels = [0, maxV / 3, 2 * maxV / 3, maxV];
-  yLabels.forEach((v, i) => {
-    const y = yOf(v);
-    const isAxis = i === 0;
-    gridLines += `<line x1="${padLeft}" y1="${y}" x2="${W - padRight}" y2="${y}" stroke="${isAxis ? '#d3d1c7' : '#e6e4dd'}" stroke-width="0.5"/>`;
-    gridLines += `<text x="${padLeft - 5}" y="${y + 3}" font-size="9" fill="#888780" text-anchor="end">${fmtMoneyK(v)}</text>`;
-  });
+        // Date : JJ/MM/AAAA
+        const dateMatch = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (!dateMatch) continue;
+        const day      = parseInt(dateMatch[1], 10);
+        const monthNum = parseInt(dateMatch[2], 10);
+        const year     = parseInt(dateMatch[3], 10);
+        if (monthNum < 1 || monthNum > 12) continue;
+        if (day < 1 || day > 31) continue;
 
-  // Labels X (semaines)
-  let xLabels = '';
-  trajectory.forEach((t, i) => {
-    xLabels += `<text x="${xOf(i)}" y="${H - 10}" font-size="9" fill="#5f5e5a" text-anchor="middle">${t.label}</text>`;
-  });
+        // Montant : "7,17" -> 7.17 -> 717 centimes
+        // On passe par les centimes (entiers) pour éviter les imprécisions
+        // de virgule flottante lors des additions répétées.
+        const euros = parseFloat(credit.replace(',', '.'));
+        if (isNaN(euros)) continue;
+        const cents = Math.round(euros * 100);
 
-  // Polylines N-1 et N
-  const ptsN1 = trajectory.map((t, i) => `${xOf(i)},${yOf(t.cumN1 || 0)}`).join(' ');
-  const ptsN  = trajectory.map((t, i) => `${xOf(i)},${yOf(t.cumN  || 0)}`).join(' ');
-  let dotsN1 = '', dotsN = '';
-  trajectory.forEach((t, i) => {
-    dotsN1 += `<circle cx="${xOf(i)}" cy="${yOf(t.cumN1 || 0)}" r="2.5" fill="#cca09c"/>`;
-    dotsN  += `<circle cx="${xOf(i)}" cy="${yOf(t.cumN  || 0)}" r="3"   fill="#7b170f"/>`;
-  });
+        // Nom du POS : libellé moins les 4 derniers caractères (DDMM)
+        let posName = label;
+        if (/\d{4}$/.test(label)) {
+          posName = label.slice(0, -4);
+        }
+        posName = posName.trim();
+        if (!posName) continue;
 
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px">
-    ${gridLines}
-    ${xLabels}
-    <polyline points="${ptsN1}" fill="none" stroke="#cca09c" stroke-width="1.5"/>
-    <polyline points="${ptsN}"  fill="none" stroke="#7b170f" stroke-width="2.2"/>
-    ${dotsN1}
-    ${dotsN}
-    <rect x="${W - 170}" y="0" width="9" height="2" fill="#7b170f"/>
-    <text x="${W - 157}" y="5" font-size="9" fill="#5f5e5a">N (cumul)</text>
-    <rect x="${W - 95}" y="0" width="9" height="2" fill="#cca09c"/>
-    <text x="${W - 82}" y="5" font-size="9" fill="#5f5e5a">N-1 (cumul)</text>
-  </svg>`;
-}
+        const sortKey = year * 10000 + monthNum * 100 + day;
+        const key     = `${sortKey}|${posName}`;
 
-// ============================================
-//  Helpers de rendu
-// ============================================
-function badgeFor(p) {
-  if (p === null || p === undefined || Number.isNaN(p)) return '<span class="badge neutral">—</span>';
-  if (p > 0) return `<span class="badge up">▲ ${fmtPct(p)}</span>`;
-  if (p < 0) return `<span class="badge down">▼ ${fmtPct(p)}</span>`;
-  return '<span class="badge neutral">0,0 %</span>';
-}
+        if (!blocks.has(key)) {
+          blocks.set(key, {
+            posName, year, monthNum, day, sortKey,
+            totalCents: 0,
+          });
+        }
+        blocks.get(key).totalCents += cents;
+      }
 
-function parseSemDateRange(libelle) {
-  // libelle = "SEMAINE 19 - DU 04/05 AU 10/05"
-  if (!libelle) return '';
-  const m = libelle.match(/DU\s+(\d{2}\/\d{2})\s+AU\s+(\d{2}\/\d{2})/i);
-  if (!m) return libelle;
-  // Reconstruire en "Du lundi DD au dimanche DD MM AAAA"
-  // Pour rester simple : on garde "Du DD/MM au DD/MM 2026" (ou 2025 pour N-1)
-  return `Du ${m[1]} au ${m[2]}`;
-}
+      if (!foundAny707) {
+        throw new Error('Aucune ligne de vente (compte 707xxx) trouvée.');
+      }
+      if (blocks.size === 0) {
+        throw new Error('Lignes 707 présentes mais aucune date/libellé exploitable.');
+      }
 
-function semNum(name) {
-  return parseInt(name.replace(/\D/g, ''), 10);
-}
+      return [...blocks.values()].map(b => ({
+        posName: b.posName,
+        year: b.year, monthNum: b.monthNum, day: b.day,
+        total: b.totalCents / 100,
+        sortKey: b.sortKey,
+      }));
+    }
 
-// PdV colors map
-const PDV_COLORS = {
-  'EXPLORER CAMP':    '#7b170f',
-  'RUSH CANYON':      '#c98a40',
-  'BAR RUSH CANYON':  '#1d9e75',
-  'SILVER LAKE':      '#4a6d8c'
-};
-
-function pdvLabel(s) {
-  // EXPLORER CAMP -> Explorer Camp (capitalize)
-  return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-}
-
-// (Rendu HTML — voir partie 2 du script)
-// ============================================
-//  RENDU HTML : Page 1
-// ============================================
-function renderHeader(week, pageNum) {
-  const semN  = parseSemDateRange(week.libelleN);   // "Du 04/05 au 10/05"
-  const semN1 = parseSemDateRange(week.libelleN1);
-  return `
-    <div class="r-header">
-      <div class="r-header-left">
-        <div class="r-logo">${LOGO_SVG}</div>
-        <div>
-          <div class="r-overtitle">RAPPORT HEBDOMADAIRE — SNACKS O'FUN PARK</div>
-          <div class="r-title">Semaine ${semNum(week.name)} · 2026</div>
-          <div class="r-subtitle">${semN} (vs N-1 : ${semN1})</div>
-        </div>
-      </div>
-      <div class="r-header-right">
-        Page ${pageNum} / 2<br>
-        Présentation Codir
-      </div>
-    </div>`;
-}
-
-function renderFooter(week, pageNum) {
-  return `
-    <div class="footer-page">
-      <span>O'Fun Park · Rapport hebdomadaire snacks · ${week.name} 2026</span>
-      <span>Page ${pageNum} / 2</span>
-    </div>`;
-}
-
-function renderPage1(week, d) {
-  const ecart = (week.total_n || 0) - (week.total_n1 || 0);
-  const ecartCum = d.cumNTarget - d.cumN1Target;
-  const nbWeeks = d.trajectory.length;
-
-  return `
-    <div class="page-content">
-      ${renderHeader(week, 1)}
-
-      <!-- Section 1 : Performance -->
-      <div class="r-section-label">1 — PERFORMANCE DE LA SEMAINE</div>
-      <div class="r-block">
-        <div class="perf-row">
-          <div>
-            <div class="perf-label">Chiffre d'affaires HT</div>
-            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
-              <div class="big-number">${fmtMoney(week.total_n, 2)}</div>
-              ${badgeFor(d.evol_total)}
-            </div>
-            <div class="perf-meta">N-1 : ${fmtMoney(week.total_n1, 2)} · Écart : ${ecart >= 0 ? '+' : ''}${fmtMoney(ecart, 2)}</div>
-          </div>
-          <div>
-            ${renderCompareBars(week.total_n1, week.total_n)}
-          </div>
-        </div>
-      </div>
-
-      <!-- Section 2 : Cumul saison & trajectoire -->
-      <div class="r-section-label">2 — CUMUL SAISON ET TRAJECTOIRE</div>
-      <div class="r-block">
-        <div style="display:grid;grid-template-columns:240px 1fr;gap:1.5rem;align-items:center;">
-          <div>
-            <div class="perf-label">Cumul saison parc</div>
-            <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
-              <div class="big-number mid">${fmtMoney(d.cumNTarget, 2)}</div>
-              ${badgeFor(d.evol_cum)}
-            </div>
-            <div class="perf-meta">DEPUIS S${semNum(d.trajectory[0].label)} · ${nbWeeks} semaine${nbWeeks > 1 ? 's' : ''}</div>
-            <div class="perf-meta" style="margin-top:6px;">
-              N-1 : ${fmtMoney(d.cumN1Target, 2)}<br>
-              Écart : ${ecartCum >= 0 ? '+' : ''}${fmtMoney(ecartCum, 2)}
-            </div>
-          </div>
-          <div>
-            ${renderTrajectorySVG(d.trajectory)}
-          </div>
-        </div>
-      </div>
-
-      <!-- Section 3 : KPI -->
-      <div class="r-section-label">3 — INDICATEURS COMPLÉMENTAIRES</div>
-      <div class="r-block">
-        <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-label">Part Snacks</div>
-            <div class="kpi-value">${fmtPct(d.part_snacks_total)}</div>
-            <div class="kpi-foot neutral">Snacks ${fmtMoney(week.snacks_total_n)} · Distrib. ${fmtMoney(week.dist_total_n)}</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Jours d'activité</div>
-            <div class="kpi-value">${d.jours_actifs_n} / 7</div>
-            <div class="kpi-foot neutral">${d.jours_actifs_n === d.jours_actifs_n1 ? 'Identique à N-1 (' + d.jours_actifs_n1 + ' / 7)' : 'N-1 : ' + d.jours_actifs_n1 + ' / 7'}</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Jour de pic</div>
-            <div class="kpi-value">${d.pic_name}</div>
-            <div class="kpi-foot ${d.pic_evol === null ? 'neutral' : (d.pic_evol >= 0 ? 'up' : 'down')}">
-              ${fmtMoney(d.pic_val, 2)}${d.pic_evol !== null ? ' · ' + (d.pic_evol >= 0 ? '▲' : '▼') + ' ' + fmtPct(d.pic_evol) : ''}
-            </div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">CA moyen / jour actif</div>
-            <div class="kpi-value">${fmtMoney(d.ca_moy_n, 2)}</div>
-            <div class="kpi-foot ${pct(d.ca_moy_n, d.ca_moy_n1) === null ? 'neutral' : (pct(d.ca_moy_n, d.ca_moy_n1) >= 0 ? 'up' : 'down')}">
-              ${(() => { const e = pct(d.ca_moy_n, d.ca_moy_n1); return e !== null ? (e >= 0 ? '▲' : '▼') + ' ' + fmtPct(e) + ' · ' : ''; })()}N-1 : ${fmtMoney(d.ca_moy_n1, 2)}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    ${renderFooter(week, 1)}`;
-}
-
-// ============================================
-//  RENDU HTML : Page 2
-// ============================================
-function renderRepartRow(label, valN, valN1, totalN, totalN1, color, isNewInN) {
-  const partN  = part(valN, totalN);
-  const partN1 = part(valN1, totalN1);
-  const evol   = pct(valN, valN1);
-  const partN_val = partN || 0;
-  const evolDisplay = evol === null ? '' : (evol >= 0 ? `<span class="up">▲ ${fmtPct(evol)}</span>` : `<span class="down">▼ ${fmtPct(evol)}</span>`);
-
-  let footText;
-  if (isNewInN) {
-    footText = 'Nouveau (absent en N-1)';
-  } else if (valN1 === null || valN1 === 0) {
-    footText = 'Pas de référence N-1';
-  } else {
-    footText = `N-1 : ${fmtMoney(valN1)} · ${fmtPct(partN1)} · ${evolDisplay}`;
-  }
-
-  return `
-    <div class="repart-row">
-      <div class="repart-head">
-        <div><span class="swatch" style="background:${color}"></span>${label}</div>
-        <div class="nums"><b>${fmtMoney(valN, 2)}</b> · ${fmtPct(partN)}</div>
-      </div>
-      <div class="repart-bar-bg">
-        <div class="repart-bar-fill" style="width:${partN_val}%;background:${color}"></div>
-      </div>
-      <div class="repart-foot">${footText}</div>
-    </div>`;
-}
-
-function renderDayRow(d, maxAbsEvol) {
-  if (d.closed) {
-    return `
-      <tr class="closed">
-        <td>${d.name}</td>
-        <td>—</td><td>—</td>
-        <td class="evo-bar-cell"><div class="evo-bar-bg"></div></td>
-        <td>—</td><td>—</td><td>—</td>
-      </tr>`;
-  }
-  const evolCls = d.evol === null ? '' : (d.evol >= 0 ? 'up' : 'down');
-  const colCls  = d.evol === null ? '' : (d.evol >= 0 ? 'col-up' : 'col-down');
-  const barWidth = d.evol === null || maxAbsEvol === 0 ? 0 : Math.min(50, Math.abs(d.evol) / maxAbsEvol * 50);
-  const peakCls = d.is_peak ? ' class="peak"' : '';
-
-  return `
-    <tr${peakCls}>
-      <td>${d.name}</td>
-      <td>${fmtMoney(d.n1, 2)}</td>
-      <td>${fmtMoney(d.n, 2)}</td>
-      <td class="evo-bar-cell">
-        <div class="evo-bar-bg">
-          ${d.evol !== null ? `<div class="evo-bar-fill ${evolCls}" style="width:${barWidth}%"></div>` : ''}
-        </div>
-      </td>
-      <td class="${colCls}">${fmtPct(d.evol)}</td>
-      <td>${fmtPct(d.part_snacks)}</td>
-      <td>${fmtPct(d.part_dist)}</td>
-    </tr>`;
-}
-
-function renderPage2(week, d) {
-  // Filtrer les PdV inactifs (à la fois N=0 et N-1=0 -> on les masque)
-  const activeSnackPdv = week.snacks_pdv.filter(p => (p.n || 0) > 0 || (p.n1 || 0) > 0);
-  const activeDistPdv  = week.dist_pdv.filter(p => (p.n || 0) > 0 || (p.n1 || 0) > 0);
-
-  // Snacks vs Distributeurs : 2 lignes
-  const canalRows =
-    renderRepartRow('Snacks (vente directe)', week.snacks_total_n, week.snacks_total_n1, week.total_n, week.total_n1, '#7b170f', false) +
-    renderRepartRow('Distributeurs', week.dist_total_n, week.dist_total_n1, week.total_n, week.total_n1, '#c98a40', false);
-
-  // 4 PdV Snacks (filtrés)
-  const pdvRows = activeSnackPdv.map(p => {
-    const isNew = (p.n || 0) > 0 && (!p.n1 || p.n1 === 0);
-    return renderRepartRow(
-      pdvLabel(p.label),
-      p.n, p.n1,
-      week.snacks_total_n, week.snacks_total_n1,
-      PDV_COLORS[p.label] || '#5f5e5a',
-      isNew
-    );
-  }).join('');
-
-  // Tableau jour par jour
-  const maxAbsEvol = Math.min(100, Math.max(10, ...d.dayDetails.filter(x => x.evol !== null).map(x => Math.abs(x.evol))));
-  const dayRows = d.dayDetails.map(dd => renderDayRow(dd, maxAbsEvol)).join('');
-
-  // Ligne total
-  const totalEvolCls = d.evol_total === null ? '' : (d.evol_total >= 0 ? 'up' : 'down');
-  const totalColCls  = d.evol_total === null ? '' : (d.evol_total >= 0 ? 'col-up' : 'col-down');
-  const totalBarW    = d.evol_total === null || maxAbsEvol === 0 ? 0 : Math.min(50, Math.abs(d.evol_total) / maxAbsEvol * 50);
-
-  return `
-    <div class="page-content">
-      ${renderHeader(week, 2)}
-
-      <!-- Section 4 : Répartition -->
-      <div class="r-section-label">4 — RÉPARTITION DU CHIFFRE D'AFFAIRES</div>
-      <div class="r-block-grid">
-        <div class="r-block">
-          <div class="block-title">Par canal de vente</div>
-          ${canalRows}
-        </div>
-        <div class="r-block">
-          <div class="block-title">Par point de vente (canal Snacks)</div>
-          ${pdvRows || '<div style="font-size:11px;color:var(--text-secondary)">Aucun point de vente actif sur cette semaine.</div>'}
-        </div>
-      </div>
-
-      <!-- Section 5 : Détail jour par jour -->
-      <div class="r-section-label">5 — DÉTAIL JOUR PAR JOUR</div>
-      <div class="r-block">
-        <table class="day-table">
-          <thead>
-            <tr>
-              <th class="left-col">Jour</th>
-              <th>CA N-1</th>
-              <th>CA N</th>
-              <th class="evo-col">Évolution</th>
-              <th>%</th>
-              <th>Part Snacks</th>
-              <th>Part Distrib.</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${dayRows}
-            <tr class="total">
-              <td>Total</td>
-              <td>${fmtMoney(week.total_n1, 2)}</td>
-              <td>${fmtMoney(week.total_n, 2)}</td>
-              <td class="evo-bar-cell">
-                <div class="evo-bar-bg">
-                  ${d.evol_total !== null ? `<div class="evo-bar-fill ${totalEvolCls}" style="width:${totalBarW}%"></div>` : ''}
-                </div>
-              </td>
-              <td class="${totalColCls}">${fmtPct(d.evol_total)}</td>
-              <td>${fmtPct(d.part_snacks_total)}</td>
-              <td>${fmtPct(d.part_dist_total)}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="legend">
-          <span><span class="sw" style="background:var(--green-bar)"></span>évolution positive</span>
-          <span><span class="sw" style="background:var(--red-bar)"></span>évolution négative</span>
-          <span><span class="sw" style="background:var(--amber-bg);border:0.5px solid #d3b377"></span>pic d'activité</span>
-          <span style="color:var(--text-tertiary)"><span class="sw" style="background:transparent;border:0.5px solid var(--border)"></span>jour fermé (—)</span>
-        </div>
-      </div>
-    </div>
-    ${renderFooter(week, 2)}`;
-}
-
-
-// ============================================
-//  ÉTAT GLOBAL + UI
-// ============================================
-let currentWorkbook = null;
-let currentAllWeeks = [];
-
-const dropZone   = document.getElementById('dropZone');
-const fileInput  = document.getElementById('fileInput');
-const fileName   = document.getElementById('fileName');
-const weekSelect = document.getElementById('weekSelect');
-const btnPrint   = document.getElementById('btnPrint');
-const btnReset   = document.getElementById('btnReset');
-const logZone    = document.getElementById('logZone');
-const reportContainer = document.getElementById('reportContainer');
-
-function log(msg, type = '') {
-  logZone.className = 'log-zone' + (type ? ' ' + type : '');
-  logZone.textContent = msg;
-}
-function clearLog() {
-  logZone.className = 'log-zone empty';
-  logZone.textContent = '';
-}
-
-dropZone.addEventListener('click', () => fileInput.click());
-dropZone.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
-});
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-dropZone.addEventListener('drop', (e) => {
-  e.preventDefault(); dropZone.classList.remove('dragover');
-  const f = e.dataTransfer.files[0]; if (f) handleFile(f);
-});
-fileInput.addEventListener('change', (e) => {
-  const f = e.target.files[0]; if (f) handleFile(f);
-});
-
-weekSelect.addEventListener('change', () => {
-  if (!weekSelect.value) return;
-  renderReport(weekSelect.value);
-});
-
-btnReset.addEventListener('click', () => {
-  currentWorkbook = null;
-  currentAllWeeks = [];
-  fileName.textContent = '';
-  fileInput.value = '';
-  weekSelect.innerHTML = '<option value="">— Charger un fichier d\'abord —</option>';
-  weekSelect.disabled = true;
-  btnPrint.disabled = true;
-  btnReset.disabled = true;
-  reportContainer.classList.remove('ready');
-  reportContainer.innerHTML = '<div class="page-sheet" id="page1"></div><div class="page-sheet" id="page2"></div>';
-  clearLog();
-});
-
-function handleFile(file) {
-  fileName.textContent = file.name;
-  log('Lecture du fichier...');
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-      const weekSheets = wb.SheetNames.filter(n => /^S\d+$/.test(n));
-      if (!weekSheets.length) {
-        log('Aucun onglet semaine détecté (attendu : S14, S15, ...).', 'error');
+    /* ACTIONS */
+    function addFiles(fileList) {
+      const valid = Array.from(fileList).filter(f =>
+        f.name.toLowerCase().endsWith('.csv')
+      );
+      if (valid.length === 0) {
+        setState({ error: 'Aucun fichier .csv valide.' });
         return;
       }
-      const allWeeks = weekSheets.map(n => parseWeekSheet(wb, n)).filter(Boolean);
-      currentWorkbook = wb;
-      currentAllWeeks = allWeeks;
-
-      // Sélecteur : on liste toutes les semaines, en sélectionnant par défaut
-      // la dernière avec des données pour N (CA total > 0)
-      const sorted = [...allWeeks].sort((a,b) => semNum(a.name) - semNum(b.name));
-      weekSelect.innerHTML = sorted.map(w => {
-        const hasData = (w.total_n || 0) > 0;
-        return `<option value="${w.name}" ${hasData ? '' : 'data-empty="1"'}>${w.name} · ${w.libelleN || ''}${hasData ? '' : ' (sans données N)'}</option>`;
-      }).join('');
-      const defaultWeek = [...sorted].reverse().find(w => (w.total_n || 0) > 0);
-      if (defaultWeek) weekSelect.value = defaultWeek.name;
-
-      weekSelect.disabled = false;
-      btnPrint.disabled = false;
-      btnReset.disabled = false;
-
-      log(`Fichier chargé. ${sorted.length} semaine(s) détectée(s) : ${sorted.map(w => w.name).join(', ')}.`, 'success');
-      renderReport(weekSelect.value);
-    } catch (err) {
-      console.error(err);
-      log('Erreur de lecture : ' + err.message, 'error');
+      const existing = new Set(state.files.map(f => f.name));
+      const newOnes  = valid.filter(f => !existing.has(f.name));
+      setState({
+        files: [...state.files, ...newOnes],
+        results: [],
+        error: null,
+      });
     }
-  };
-  reader.onerror = () => log('Erreur de lecture du fichier.', 'error');
-  reader.readAsArrayBuffer(file);
-}
 
-function renderReport(weekName) {
-  const week = currentAllWeeks.find(w => w.name === weekName);
-  if (!week) return;
-  const derived = computeDerived(week, currentAllWeeks, weekName);
-  document.getElementById('page1').innerHTML = renderPage1(week, derived);
-  document.getElementById('page2').innerHTML = renderPage2(week, derived);
-  reportContainer.classList.add('ready');
-}
-</script>
+    function removeFile(idx) {
+      setState({
+        files: state.files.filter((_, i) => i !== idx),
+        results: [],
+      });
+    }
+
+    async function processFiles() {
+      if (state.files.length === 0) {
+        setState({ error: 'Veuillez sélectionner au moins un fichier.' });
+        return;
+      }
+      setState({ isProcessing: true, error: null });
+
+      const allResults = [];
+      for (const file of state.files) {
+        try {
+          const blockResults = parseFileContent(await file.text());
+          blockResults.forEach(r => allResults.push({ ...r, fileName: file.name }));
+        } catch (err) {
+          allResults.push({ fileName: file.name, error: err.message });
+        }
+      }
+      setState({ results: allResults, isProcessing: false });
+    }
+
+    /* AGRÉGATION & GROUPEMENT */
+    function buildGroups() {
+      const successes = state.results.filter(r => !r.error);
+      const errors    = state.results.filter(r =>  r.error);
+
+      const aggMap = new Map();
+      for (const r of successes) {
+        const key = `${r.sortKey}|${r.posName}`;
+        if (aggMap.has(key)) {
+          aggMap.get(key).total += r.total;
+        } else {
+          aggMap.set(key, { ...r, copyKey: key });
+        }
+      }
+
+      const dateGroups = new Map();
+      for (const r of aggMap.values()) {
+        if (!dateGroups.has(r.sortKey)) {
+          dateGroups.set(r.sortKey, {
+            sortKey: r.sortKey,
+            year: r.year, monthNum: r.monthNum, day: r.day,
+            items: [],
+          });
+        }
+        dateGroups.get(r.sortKey).items.push(r);
+      }
+
+      for (const g of dateGroups.values()) {
+        g.items.sort((a, b) => a.posName.localeCompare(b.posName, 'fr'));
+      }
+
+      return {
+        groups: [...dateGroups.values()].sort((a, b) => a.sortKey - b.sortKey),
+        errors,
+      };
+    }
+
+    /* COPIE */
+    function handleCopy(key) {
+      const { groups } = buildGroups();
+      let item = null;
+      for (const g of groups) {
+        item = g.items.find(i => i.copyKey === key);
+        if (item) break;
+      }
+      if (!item) return;
+
+      copyText(formatAmount(item.total)).then(() => {
+        copiedKey = key;
+        updateCopyButton(key);
+        setTimeout(() => {
+          if (copiedKey === key) {
+            copiedKey = null;
+            updateCopyButton(key);
+          }
+        }, 2000);
+      });
+    }
+
+    function updateCopyButton(key) {
+      const btn = document.querySelector(`.copy-btn[data-key="${CSS.escape(key)}"]`);
+      if (!btn) return;
+      const isCopied = copiedKey === key;
+      btn.classList.toggle('copied', isCopied);
+      btn.innerHTML = `${icon(isCopied ? 'check' : 'copy', 14)} ${isCopied ? 'Copié' : 'Copier'}`;
+    }
+
+    function reset() {
+      document.getElementById('file-input').value = '';
+      copiedKey = null;
+      setState({ files: [], results: [], error: null });
+    }
+
+    /* RENDU */
+    function render() {
+      renderUploadZone();
+      renderActions();
+      renderError();
+      renderResults();
+      renderHelp();
+    }
+
+    function renderUploadZone() {
+      const zone = document.getElementById('upload-zone');
+      zone.classList.toggle('has-files', state.files.length > 0);
+
+      if (state.files.length === 0) {
+        zone.innerHTML = `
+          <div class="upload-empty">
+            ${icon('upload', 20)}
+            <div>
+              <p class="upload-empty-title">Glisser un ou plusieurs fichiers .csv</p>
+              <p class="upload-empty-sub">ou cliquer pour parcourir</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const plural = state.files.length > 1;
+      zone.innerHTML = `
+        <p class="file-list-label">${state.files.length} fichier${plural ? 's' : ''} prêt${plural ? 's' : ''}</p>
+        <div>
+          ${state.files.map((file, idx) => `
+            <div class="file-row">
+              <span class="file-icon">${icon('fileText', 16)}</span>
+              <span class="file-name">${escapeHtml(file.name)}</span>
+              <span class="file-size">${(file.size / 1024).toFixed(1)} Ko</span>
+              <button class="remove" data-action="remove-file" data-idx="${idx}" title="Retirer">
+                ${icon('x', 16)}
+              </button>
+            </div>
+          `).join('')}
+        </div>
+        <p class="upload-hint">Cliquer ou glisser pour ajouter d'autres fichiers</p>
+      `;
+    }
+
+    function renderActions() {
+      const el = document.getElementById('actions');
+      const canProcess = state.files.length > 0 && !state.isProcessing;
+      const hasContent = state.files.length > 0 || state.results.length > 0;
+
+      let label;
+      if (state.isProcessing)          label = 'Analyse en cours…';
+      else if (state.files.length > 1) label = `Lancer l'extraction (${state.files.length})`;
+      else                             label = "Lancer l'extraction";
+
+      el.innerHTML = `
+        <button class="btn-primary" data-action="process" ${canProcess ? '' : 'disabled'}>
+          ${escapeHtml(label)}
+        </button>
+        ${hasContent ? `
+          <button class="btn-secondary" data-action="reset" title="Tout réinitialiser">
+            ${icon('rotateCcw', 16)}
+          </button>
+        ` : ''}
+      `;
+    }
+
+    function renderError() {
+      const el = document.getElementById('error-block');
+      el.innerHTML = state.error ? `
+        <div class="error-block fade-up">
+          ${icon('alertCircle', 16)}
+          <p>${escapeHtml(state.error)}</p>
+        </div>
+      ` : '';
+    }
+
+    function renderResults() {
+      const el = document.getElementById('results-block');
+      if (state.results.length === 0) { el.innerHTML = ''; return; }
+
+      const { groups, errors } = buildGroups();
+      const totalEntries = groups.reduce((s, g) => s + g.items.length, 0);
+
+      el.innerHTML = `
+        <div class="results fade-up">
+          <p class="results-meta">
+            ${totalEntries} ligne${totalEntries > 1 ? 's' : ''}
+            sur ${groups.length} jour${groups.length > 1 ? 's' : ''}
+          </p>
+          ${groups.map(g => renderDateGroup(g)).join('')}
+          ${errors.length > 0 ? renderErrors(errors) : ''}
+        </div>
+      `;
+    }
+
+    function renderDateGroup(g) {
+      const d = new Date(g.year, g.monthNum - 1, g.day);
+      const weekday = weekdayNames[d.getDay()];
+      const dateStr = `${g.day} ${monthNames[g.monthNum - 1]} ${g.year}`;
+
+      return `
+        <section class="date-group">
+          <h3 class="date-header">
+            <span class="weekday">${weekday}</span> ${dateStr}
+          </h3>
+          <div class="pos-table">
+            ${g.items.map(item => renderPosRow(item)).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderPosRow(item) {
+      const isCopied = copiedKey === item.copyKey;
+      return `
+        <div class="pos-row">
+          <span class="pos-name">${escapeHtml(item.posName)}</span>
+          <span class="pos-amount">${formatAmount(item.total)} €</span>
+          <button class="copy-btn ${isCopied ? 'copied' : ''}"
+                  data-action="copy" data-key="${escapeHtml(item.copyKey)}">
+            ${icon(isCopied ? 'check' : 'copy', 14)}
+            ${isCopied ? 'Copié' : 'Copier'}
+          </button>
+        </div>
+      `;
+    }
+
+    function renderErrors(errors) {
+      return `
+        <div class="errors-section">
+          <p class="errors-label">${errors.length} erreur${errors.length > 1 ? 's' : ''} de lecture</p>
+          ${errors.map(e => `
+            <div class="error-row">
+              ${icon('alertCircle', 14)}
+              <div>
+                <p class="error-filename">${escapeHtml(e.fileName || '')}</p>
+                <p class="error-msg">${escapeHtml(e.error)}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderHelp() {
+      const el = document.getElementById('help-block');
+      if (state.results.length > 0 || state.error) { el.innerHTML = ''; return; }
+      el.innerHTML = `
+        <p class="help-text">
+          Le programme garde uniquement les lignes en crédit
+          (<span class="inline-mono">C</span>) dont le compte commence par
+          <span class="inline-mono">707</span>. Le nom du point de vente est
+          extrait du libellé (les 4 derniers caractères <span class="inline-mono">JJMM</span>
+          sont retirés), et les ventes sont agrégées par couple (date, point
+          de vente) y compris à travers plusieurs fichiers. Tri par date
+          chronologique, puis par point de vente alphabétique.
+        </p>
+      `;
+    }
+
+    /* ÉVÉNEMENTS */
+    function initEvents() {
+      document.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+
+        switch (target.dataset.action) {
+          case 'open-picker':
+            document.getElementById('file-input').click();
+            break;
+          case 'remove-file':
+            e.stopPropagation();
+            removeFile(+target.dataset.idx);
+            break;
+          case 'process':
+            if (!target.disabled) processFiles();
+            break;
+          case 'reset':
+            reset();
+            break;
+          case 'copy':
+            handleCopy(target.dataset.key);
+            break;
+        }
+      });
+
+      document.getElementById('file-input').addEventListener('change', (e) => {
+        addFiles(e.target.files);
+        e.target.value = '';
+      });
+
+      const zone = document.getElementById('upload-zone');
+      let dragTimeout;
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('dragging');
+        clearTimeout(dragTimeout);
+      });
+      zone.addEventListener('dragleave', () => {
+        clearTimeout(dragTimeout);
+        dragTimeout = setTimeout(() => zone.classList.remove('dragging'), 50);
+      });
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        clearTimeout(dragTimeout);
+        zone.classList.remove('dragging');
+        addFiles(e.dataTransfer.files);
+      });
+    }
+
+    initEvents();
+    render();
+  })();
+  </script>
 </body>
 </html>
